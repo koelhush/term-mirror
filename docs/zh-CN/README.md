@@ -76,7 +76,15 @@
 
 ## 🚀 极速上手
 
-### 方式一：Docker 一行命令启动
+### 1. 拉取 Docker 镜像
+
+```bash
+docker pull ghcr.io/koelhush/term-mirror:latest
+```
+
+### 2. 运行容器（常用运行用例）
+
+#### 用例 A：标准后台启动
 
 ```bash
 docker run -d --name term_mirror \
@@ -85,17 +93,43 @@ docker run -d --name term_mirror \
   ghcr.io/koelhush/term-mirror:latest
 ```
 
-启动完成后：
+#### 用例 B：挂载公钥实现免密 SSH 登录
+
+直接挂载宿主机 SSH 公钥，免去每次输入密码：
+
+```bash
+docker run -d --name term_mirror \
+  -p 7681:7681 -p 2222:22 \
+  -v $(pwd)/workspace:/workspace \
+  -v ~/.ssh/id_rsa.pub:/home/sandbox/.ssh/authorized_keys:ro \
+  ghcr.io/koelhush/term-mirror:latest
+```
+
+#### 用例 C：启动时自动克隆业务代码库（`WORKGITURL`）
+
+利用开箱即用的自动拉取契约，容器启动即自动检出项目至 `/workspace`：
+
+```bash
+docker run -d --name term_mirror \
+  -p 7681:7681 -p 2222:22 \
+  -v $(pwd)/workspace:/workspace \
+  -e WORKGITURL="https://github.com/your-org/your-project.git" \
+  ghcr.io/koelhush/term-mirror:latest
+```
+
+### 3. 连接与双端同屏交互
+
 - **WebUI 访问**：浏览器打开 `http://127.0.0.1:7681`，进入同屏终端；
 - **本地 SSH 连接**：
   ```bash
   ssh -p 2222 sandbox@127.0.0.1
-  # 默认密码: sandbox (如挂载了 ~/.ssh/authorized_keys 则免密)
+  # 默认密码: sandbox (如挂载了公钥则免密直接登入)
   ```
+- **随时安全脱离**：输入 `exit` 或直接关闭终端窗口即可脱离连接，后台会话与 Agent 任务**持续保活永不中断**，重连瞬间恢复现场！
 
 ---
 
-### 方式二：Docker Compose
+### 备选方式：Docker Compose
 
 克隆本项目并一键启动：
 

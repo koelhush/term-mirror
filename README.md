@@ -76,7 +76,15 @@ However, modern leading AI coding agents (such as **Claude Code, Aider, OpenCode
 
 ## 🚀 Quick Start
 
-### Option 1: Docker One-Liner
+### 1. Pull the Docker Image
+
+```bash
+docker pull ghcr.io/koelhush/term-mirror:latest
+```
+
+### 2. Run the Container (Common Use Cases)
+
+#### Use Case A: Standard Background Run
 
 ```bash
 docker run -d --name term_mirror \
@@ -85,17 +93,43 @@ docker run -d --name term_mirror \
   ghcr.io/koelhush/term-mirror:latest
 ```
 
-After startup:
+#### Use Case B: Passwordless SSH via Host Public Key
+
+Mount your host SSH public key for instant passwordless SSH authentication:
+
+```bash
+docker run -d --name term_mirror \
+  -p 7681:7681 -p 2222:22 \
+  -v $(pwd)/workspace:/workspace \
+  -v ~/.ssh/id_rsa.pub:/home/sandbox/.ssh/authorized_keys:ro \
+  ghcr.io/koelhush/term-mirror:latest
+```
+
+#### Use Case C: Auto-Clone Project on Launch (`WORKGITURL`)
+
+Automatically check out your target repository into `/workspace` upon startup:
+
+```bash
+docker run -d --name term_mirror \
+  -p 7681:7681 -p 2222:22 \
+  -v $(pwd)/workspace:/workspace \
+  -e WORKGITURL="https://github.com/your-org/your-project.git" \
+  ghcr.io/koelhush/term-mirror:latest
+```
+
+### 3. Connect to Your Live Mirrored Session
+
 - **Web Console**: Open `http://127.0.0.1:7681` in your browser.
-- **Local SSH**:
+- **Local SSH Terminal**:
   ```bash
   ssh -p 2222 sandbox@127.0.0.1
-  # Default password: sandbox (passwordless if mounting ~/.ssh/authorized_keys)
+  # Default password: sandbox (or passwordless if authorized_keys was mounted)
   ```
+- **Detach anytime**: Simply type `exit` or disconnect SSH — your session, background tasks, and AI agents will continue running uninterrupted!
 
 ---
 
-### Option 2: Docker Compose
+### Alternative: Docker Compose
 
 ```bash
 git clone git@github.com:koelhush/term-mirror.git
