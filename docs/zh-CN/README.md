@@ -208,6 +208,19 @@ USER sandbox
 
 ---
 
+## 💖 致谢与开源组件声明 (Acknowledgments & Third-Party Notices)
+
+TermMirror 的实现离不开开源社区优秀项目的基石，在此特别向以下技术与项目致敬与致谢：
+
+- **[xterm.js](https://xtermjs.org/)** (MIT License)：Web Console 前端终端渲染引擎。  
+  *Copyright (c) 2014 The xterm.js authors; Copyright (c) 2012-2013 Christopher Jeffrey; 早期衍生自 Fabrice Bellard 的 jslinux vt100 (Copyright (c) 2011 Fabrice Bellard)。*
+- **[aiohttp](https://github.com/aio-libs/aiohttp)** (Apache-2.0 License)：高性能异步 Python Web 与 WebSocket 框架，用于托管单主 PTY 实时字节流分流与广播中枢。  
+  *Copyright (c) 2013-present aiohttp contributors。*
+- **[OpenSSH](https://www.openssh.com/)** (BSD License)：工业级 SSH 远程连入与高安全鉴权服务。
+- **设计理念与先行者致敬**：感谢 [`tmux`](https://github.com/tmux/tmux)、[`screen`](https://www.gnu.org/software/screen/) 等经典终端复用器，以及 [`ttyd`](https://github.com/tsl0922/ttyd) 等 Web 终端探索者所建立的技术范式。TermMirror 在此基础上舍弃了破坏原生滚动的中间层画布重绘，打造了专属于交互式 CLI Agent 的零改写 PTY 镜像网关。
+
+---
+
 ## 📄 开源许可证
 
 本项目采用 [Apache-2.0 许可证](../../LICENSE)。

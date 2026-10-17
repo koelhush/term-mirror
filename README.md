@@ -204,6 +204,19 @@ Follows **Core Base + Modular Flavors** architecture:
 
 ---
 
+## 💖 Acknowledgments & Third-Party Notices
+
+TermMirror stands on the shoulders of giants. We gratefully acknowledge the following open-source projects and technologies:
+
+- **[xterm.js](https://xtermjs.org/)** (MIT License): Frontend terminal rendering engine for the Web Console.  
+  *Copyright (c) 2014 The xterm.js authors; Copyright (c) 2012-2013 Christopher Jeffrey; originally forked from Fabrice Bellard's vt100 for jslinux (Copyright (c) 2011 Fabrice Bellard).*
+- **[aiohttp](https://github.com/aio-libs/aiohttp)** (Apache-2.0 License): High-performance asynchronous HTTP and WebSocket server powering the real-time PTY stream hub.  
+  *Copyright (c) 2013-present aiohttp contributors.*
+- **[OpenSSH](https://www.openssh.com/)** (BSD License): Industry-standard SSH server providing robust remote access and secure authentication.
+- **Inspirations & Prior Art**: The terminal multiplexing paradigms established by [`tmux`](https://github.com/tmux/tmux), [`screen`](https://www.gnu.org/software/screen/), and web terminal tools like [`ttyd`](https://github.com/tsl0922/ttyd) inspired this zero-rewrite, transparent PTY gateway architecture.
+
+---
+
 ## 📄 License
 
 Distributed under the [Apache-2.0 License](LICENSE).
