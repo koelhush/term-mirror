@@ -1,0 +1,6 @@
+{
+  "allowNonWorkspaceAccess": true,
+  "trustedWorkspaces": [
+    "/workspace"
+  ]
+}

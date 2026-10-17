@@ -1,0 +1,18 @@
+# Git & System
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/
+
+# Keys & Secrets
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+authorized_keys
+
+# Local test & builds
+test-workdir/
+workspace/
+*.log

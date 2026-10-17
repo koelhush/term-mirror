@@ -1,0 +1,17 @@
+services:
+  term_mirror:
+    container_name: term_mirror
+    build: .
+    restart: unless-stopped
+    ports:
+      - "2222:22"     # Local SSH port (ssh -p 2222 sandbox@127.0.0.1 Password: sandbox)
+      - "7681:7681"   # WebUI console port (http://127.0.0.1:7681)
+    environment:
+      - WORKDIR=/workspace
+      # Optional: Auto-clones project repo as scaffold. To keep a completely clean workspace, set: WORKGITURL=""
+      - WORKGITURL=git@github.com:koelhush/term-mirror.git
+    volumes:
+      # Persistently mount host workspace directory
+      - ./workspace:/workspace
+      # Optional: Mount host SSH authorized keys for passwordless login
+      - ~/.ssh/authorized_keys:/root/.ssh/authorized_keys:ro

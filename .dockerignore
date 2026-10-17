@@ -1,0 +1,9 @@
+.git
+.github
+.gitignore
+.dockerignore
+workspace/
+test-workdir/
+*.md
+!templates/AGENTS.md
+!templates/AGENTS_EXTRA.md

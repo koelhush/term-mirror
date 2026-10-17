@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TermMirror Web Console</title>
+  <link rel="stylesheet" href="/static/xterm.css" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #191d27;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    #viewport {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background-color: #191d27;
+    }
+    #terminal-wrapper {
+      transform-origin: center center;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+      background-color: #191d27;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .xterm {
+      padding: 4px;
+      background-color: #191d27;
+    }
+    .xterm-viewport {
+      background-color: #191d27 !important;
+    }
+    #status-bar {
+      position: fixed;
+      bottom: 8px;
+      right: 12px;
+      font-size: 11px;
+      color: #6caa71;
+      background: rgba(25, 29, 39, 0.85);
+      padding: 2px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 999;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="viewport">
+    <div id="terminal-wrapper"></div>
+  </div>
+  <div id="status-bar">Connected</div>
+
+  <script src="/static/xterm.js"></script>
+  <script>
+    window.onbeforeunload = null;
+
+    const wrapper = document.getElementById('terminal-wrapper');
+    const viewport = document.getElementById('viewport');
+    const statusBar = document.getElementById('status-bar');
+
+    const term = new Terminal({
+      cols: 140,
+      rows: 40,
+      scrollback: 50000,
+      cursorBlink: true,
+      fontFamily: 'SF Mono, SFMono-Regular, "PingFang SC", "Cascadia Code", Menlo, Monaco, "Courier New", monospace',
+      fontSize: 14,
+      rightClickSelectsWord: false,
+      theme: {
+        background: "#191d27",
+        foreground: "#e0e0e0",
+        cursor: "#e0e0e0",
+        cursorAccent: "#191d27",
+        selectionBackground: "rgba(39, 61, 76, 0.75)",
+        black: "#35424c",
+        red: "#b45648",
+        green: "#6caa71",
+        yellow: "#c4ac62",
+        blue: "#6d96b4",
+        magenta: "#bd7bcd",
+        cyan: "#7ccbcd",
+        white: "#dee5eb",
+        brightBlack: "#465c6d",
+        brightRed: "#df6c5a",
+        brightGreen: "#79be7e",
+        brightYellow: "#e5c872",
+        brightBlue: "#67b5ed",
+        brightMagenta: "#d389e5",
+        brightCyan: "#84dde0",
+        brightWhite: "#e5eff5"
+      }
+    });
+    term.open(wrapper);
+    setTimeout(() => term.focus(), 50);
+
+    viewport.addEventListener('click', () => {
+      term.focus();
+    });
+
+    // ─── Fix 1: Preserve text selection on right-click and allow browser native context menu ───
+
+    wrapper.addEventListener('mousedown', (e) => {
+      if (e.button === 2 && term.hasSelection()) {
+        // Prevent xterm.js from clearing selection on right-click mousedown,
+        // without calling preventDefault(), so the browser context menu appears naturally
+        e.stopImmediatePropagation();
+      }
+    }, true); // Intercept during the Capture phase
+
+    wrapper.addEventListener('contextmenu', () => {
+      if (term.hasSelection() && term.textarea) {
+        // Ensure hidden textarea holds selection text when context menu appears
+        term.textarea.value = term.getSelection();
+        term.textarea.focus();
+        term.textarea.select();
+      }
+    }, true);
+
+    // Intercept Cmd+C / Ctrl+C to copy selection
+    window.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'c' && term.hasSelection()) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(term.getSelection());
+        }
+      }
+    });
+
+    // ─── Fix 2: Disable FitAddon, lock to SSH master dimensions + CSS equal-ratio scaling ───
+    function scaleTerminalToFit() {
+      const coreEl = wrapper.querySelector('.xterm');
+      if (!coreEl) return;
+      const termWidth = coreEl.offsetWidth;
+      const termHeight = coreEl.offsetHeight;
+      if (!termWidth || !termHeight) return;
+
+      const scaleX = (viewport.clientWidth - 16) / termWidth;
+      const scaleY = (viewport.clientHeight - 16) / termHeight;
+      const scale = Math.min(scaleX, scaleY);
+      wrapper.style.transform = `scale(${scale})`;
+    }
+
+    new ResizeObserver(scaleTerminalToFit).observe(viewport);
+    window.addEventListener('resize', scaleTerminalToFit);
+
+    // ─── WebSocket connection & auto-reconnect ───
+    let ws = null;
+    let reconnectTimer = null;
+
+    function connectWs() {
+      if (ws) {
+        try { ws.close(); } catch(e) {}
+      }
+      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${proto}//${location.host}/ws`);
+      ws.binaryType = 'arraybuffer';
+
+      ws.onopen = () => {
+        statusBar.style.display = 'none';
+        statusBar.textContent = 'Connected';
+        statusBar.style.color = '#6caa71';
+      };
+
+      ws.onmessage = (event) => {
+        if (typeof event.data === 'string') {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.type === 'resize') {
+              // Unconditionally follow SSH master dimensions, eliminating dotted padding borders
+              term.resize(msg.cols, msg.rows);
+              requestAnimationFrame(scaleTerminalToFit);
+            }
+          } catch(e) {}
+        } else {
+          term.write(new Uint8Array(event.data));
+        }
+      };
+
+      ws.onclose = () => {
+        statusBar.style.display = 'block';
+        statusBar.textContent = 'Reconnecting...';
+        statusBar.style.color = '#df6c5a';
+        clearTimeout(reconnectTimer);
+        reconnectTimer = setTimeout(connectWs, 1500);
+      };
+
+      ws.onerror = () => {
+        try { ws.close(); } catch(e) {}
+      };
+    }
+
+    term.onData((data) => {
+      // Filter unsolicited terminal capability report replies
+      const clean = data.replace(/\x1b\[\?[0-9;]*[a-zA-Z$]|\x1b\](?:10|11|12);[^\x07\x1b]*(?:\x07|\x1b\\)?|\x1b\[>[0-9;]*c/g, '');
+      if (!clean) return;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'input', data: clean }));
+      }
+    });
+
+
+    connectWs();
+  </script>
+</body>
+</html>
